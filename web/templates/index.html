@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Download Page</title>
+        <script src="https://cdn.tailwindcss.com"></script>
+        <style>
+            @keyframes pulse {
+                0% {
+                    transform: scale(1);
+                }
+                50% {
+                    transform: scale(1.05);
+                }
+                100% {
+                    transform: scale(1);
+                }
+            }
+            .gaming-container {
+                background: linear-gradient(135deg, #1a1a1a 0%, #0a0a0a 100%);
+                border: 1px solid #333;
+            }
+            .gaming-button {
+                background: linear-gradient(90deg, #ff4d4d 0%, #f9cb28 100%);
+            }
+            .gaming-button:hover {
+                filter: brightness(1.2);
+            }
+        </style>
+    </head>
+    <body class="bg-zinc-950 min-h-screen">
+        <div class="container mx-auto px-4 py-16">
+            <div class="max-w-md mx-auto gaming-container rounded-xl p-8 shadow-2xl">
+                <h1 class="text-5xl font-black text-center text-white mb-8 tracking-tight">WILLYWARE</h1>
+
+                <div class="space-y-8">
+                    <div class="text-center text-zinc-400 text-lg font-medium">
+                        Each download is a unique binary to prevent detection
+                    </div>
+
+                    <!-- Features List -->
+                    <div class="space-y-4 mb-8">
+                        <h2 class="text-2xl font-bold text-white text-center mb-4">Features</h2>
+                        <ul class="space-y-3">
+                            <li class="flex items-center text-zinc-300">
+                                <svg class="w-5 h-5 mr-3 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path
+                                        stroke-linecap="round"
+                                        stroke-linejoin="round"
+                                        stroke-width="2"
+                                        d="M5 13l4 4L19 7"
+                                    ></path>
+                                </svg>
+                                Radar hack
+                            </li>
+                            <li class="flex items-center text-zinc-300">
+                                <svg class="w-5 h-5 mr-3 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path
+                                        stroke-linecap="round"
+                                        stroke-linejoin="round"
+                                        stroke-width="2"
+                                        d="M5 13l4 4L19 7"
+                                    ></path>
+                                </svg>
+                                Triggerbot
+                            </li>
+                            <li class="flex items-center text-zinc-300">
+                                <svg class="w-5 h-5 mr-3 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path
+                                        stroke-linecap="round"
+                                        stroke-linejoin="round"
+                                        stroke-width="2"
+                                        d="M5 13l4 4L19 7"
+                                    ></path>
+                                </svg>
+                                Health ESP
+                            </li>
+                            <li class="flex items-center text-zinc-300">
+                                <svg class="w-5 h-5 mr-3 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path
+                                        stroke-linecap="round"
+                                        stroke-linejoin="round"
+                                        stroke-width="2"
+                                        d="M5 13l4 4L19 7"
+                                    ></path>
+                                </svg>
+                                Automatic offsets
+                            </li>
+                        </ul>
+                    </div>
+
+                    <div class="text-center">
+                        <a
+                            href="/download"
+                            class="gaming-button inline-block px-10 py-4 text-white font-bold rounded-lg text-lg transition-all duration-200 uppercase tracking-wider shadow-lg"
+                        >
+                            Download Now
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modern accents -->
+        <div class="fixed bottom-0 left-0 w-full h-1 bg-gradient-to-r from-red-500 to-yellow-500"></div>
+    </body>
+</html>
