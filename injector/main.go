@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/binary"
 	"fmt"
-	"math/rand"
 	"os"
 	"syscall"
 	"time"
@@ -106,49 +105,49 @@ type IMAGE_DATA_DIRECTORY struct {
 
 // CONTEXT represents the thread context
 type CONTEXT struct {
-	P1Home, P2Home, P3Home, P4Home, P5Home, P6Home uint64
-	ContextFlags                                   uint32
+	P1Home, P2Home, P3Home, P4Home, P5Home, P6Home  uint64
+	ContextFlags                                    uint32
 	MxCsr, SegCs, SegDs, SegEs, SegFs, SegGs, SegSs uint16
-	EFlags                                         uint32
-	Dr0, Dr1, Dr2, Dr3, Dr6, Dr7                  uint64
-	Rax, Rcx, Rdx, Rbx, Rsp, Rbp, Rsi, Rdi        uint64
-	R8, R9, R10, R11, R12, R13, R14, R15          uint64
-	Rip                                           uint64
+	EFlags                                          uint32
+	Dr0, Dr1, Dr2, Dr3, Dr6, Dr7                    uint64
+	Rax, Rcx, Rdx, Rbx, Rsp, Rbp, Rsi, Rdi          uint64
+	R8, R9, R10, R11, R12, R13, R14, R15            uint64
+	Rip                                             uint64
 }
 
 var ntAllocateVirtualMemory = windows.NewLazySystemDLL("ntdll.dll").NewProc("NtAllocateVirtualMemory")
 
 func allocateMemory(handle windows.Handle, size uintptr) (uintptr, error) {
-    var baseAddress uintptr
-    status, _, _ := ntAllocateVirtualMemory.Call(
-        uintptr(handle),
-        uintptr(unsafe.Pointer(&baseAddress)),
-        0,
-        uintptr(unsafe.Pointer(&size)),
-        MEM_COMMIT|MEM_RESERVE,
-        PAGE_EXECUTE_READWRITE,
-    )
-    if status != 0 {
-        return 0, fmt.Errorf("failed to allocate memory: status 0x%x", status)
-    }
-    return baseAddress, nil
+	var baseAddress uintptr
+	status, _, _ := ntAllocateVirtualMemory.Call(
+		uintptr(handle),
+		uintptr(unsafe.Pointer(&baseAddress)),
+		0,
+		uintptr(unsafe.Pointer(&size)),
+		MEM_COMMIT|MEM_RESERVE,
+		PAGE_EXECUTE_READWRITE,
+	)
+	if status != 0 {
+		return 0, fmt.Errorf("failed to allocate memory: status 0x%x", status)
+	}
+	return baseAddress, nil
 }
 
 var ntWriteVirtualMemory = windows.NewLazySystemDLL("ntdll.dll").NewProc("NtWriteVirtualMemory")
 
 func writeMemory(handle windows.Handle, address uintptr, data []byte) error {
-    var written uintptr
-    status, _, _ := ntWriteVirtualMemory.Call(
-        uintptr(handle),
-        address,
-        uintptr(unsafe.Pointer(&data[0])),
-        uintptr(len(data)),
-        uintptr(unsafe.Pointer(&written)),
-    )
-    if status != 0 {
-        return fmt.Errorf("failed to write memory: status 0x%x", status)
-    }
-    return nil
+	var written uintptr
+	status, _, _ := ntWriteVirtualMemory.Call(
+		uintptr(handle),
+		address,
+		uintptr(unsafe.Pointer(&data[0])),
+		uintptr(len(data)),
+		uintptr(unsafe.Pointer(&written)),
+	)
+	if status != 0 {
+		return fmt.Errorf("failed to write memory: status 0x%x", status)
+	}
+	return nil
 }
 
 var kernel32QueueUserAPC = windows.NewLazySystemDLL("kernel32.dll").NewProc("QueueUserAPC")
@@ -182,15 +181,6 @@ func changeMemoryProtection(handle windows.Handle, address uintptr, size uintptr
 	return nil
 }
 
-func randomDelay(minMs, maxMs int) {
-	delta := maxMs - minMs
-	if delta <= 0 {
-		time.Sleep(time.Duration(minMs) * time.Millisecond)
-		return
-	}
-	time.Sleep(time.Duration(minMs+rand.Intn(delta)) * time.Millisecond)
-}
-
 func xorEncryptDecrypt(input, key string) string {
 	output := make([]byte, len(input))
 	keyLen := len(key)
@@ -201,18 +191,6 @@ func xorEncryptDecrypt(input, key string) string {
 
 	return string(output)
 }
-
-func encryptString(input, key string) string {
-	return xorEncryptDecrypt(input, key)
-}
-
-func decryptString(encrypted string, key string) string {
-	return xorEncryptDecrypt(encrypted, key)
-}
-
-// Compile-time encrypted strings
-var encryptedProcessName = encryptString("cs2.exe", "secret_key")
-var encryptedDllPath = encryptString("C:\\path\\to\\your.dll", "secret_key")
 
 // Manually maps a DLL into a target process
 func manualMap(processHandle windows.Handle, threadHandle windows.Handle, dllPath string) error {
@@ -273,14 +251,25 @@ func manualMap(processHandle windows.Handle, threadHandle windows.Handle, dllPat
 
 	// Step 8: Wait for execution and clean up
 	time.Sleep(500 * time.Millisecond)
+	cleanup := func() {
+		// Change protection back to writable before cleanup
+		if err := changeMemoryProtection(processHandle, remoteBaseAddr, uintptr(ntHeaders.OptionalHeader.SizeOfHeaders), PAGE_EXECUTE_READWRITE); err != nil {
+			fmt.Printf("Warning: Failed to change memory protection for cleanup: %s\n", err)
+			return
+		}
 
-	// Overwrite the entry point memory with placeholder data (optional cleanup step)
-	placeholder := make([]byte, ntHeaders.OptionalHeader.SizeOfHeaders)
-	if err := writeMemory(processHandle, remoteBaseAddr, placeholder); err != nil {
-		fmt.Printf("Failed to clean up memory: %s\n", err)
+		placeholder := make([]byte, ntHeaders.OptionalHeader.SizeOfHeaders)
+		if err := writeMemory(processHandle, remoteBaseAddr, placeholder); err != nil {
+			fmt.Printf("Warning: Failed to clean up memory: %s\n", err)
+			return
+		}
+		fmt.Println("Memory cleanup completed successfully")
 	}
 
-	fmt.Println("DLL successfully mapped and APC cleaned!")
+	// Execute cleanup in a way that doesn't affect the main operation
+	cleanup()
+
+	fmt.Println("DLL successfully mapped and APC queued!")
 	return nil
 }
 
@@ -293,8 +282,8 @@ func getProcessHandleByDuplicate(processID uint32) (windows.Handle, error) {
 		currentProcessHandle,
 		currentProcessHandle,
 		&targetProcessHandle,
-		0,                // Desired access (set to 0 to inherit permissions)
-		false,            // Inherit handle
+		0,                             // Desired access (set to 0 to inherit permissions)
+		false,                         // Inherit handle
 		windows.DUPLICATE_SAME_ACCESS, // Same access as current process
 	)
 	if err != nil {
@@ -368,7 +357,7 @@ func main() {
 	// Step 1: Encrypt sensitive strings
 	encryptionKey := "secret_key"
 	encryptedProcessName := xorEncryptDecrypt("cs2.exe", encryptionKey)
-	encryptedDllPath := xorEncryptDecrypt("C:\\path\\to\\your.dll", encryptionKey)
+	encryptedDllPath := xorEncryptDecrypt("./ww.dll", encryptionKey)
 
 	// Step 2: Decrypt sensitive strings at runtime
 	processName := xorEncryptDecrypt(encryptedProcessName, encryptionKey)
