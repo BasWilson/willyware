@@ -1,46 +1,36 @@
-# Build stage
-FROM golang:1.21 as builder
+# Build stage for web application
+FROM golang:1.22.2-bullseye as web-builder
 
-# Install build essentials
-RUN apt-get update && apt-get install -y \
-    build-essential \
-    && rm -rf /var/lib/apt/lists/*
-
-# Set working directory
-WORKDIR /app
-
-# Copy both ww and web directories
-COPY ww ./ww
-COPY web ./web
-
-# Set working directory to web
 WORKDIR /app/web
+COPY web/go.mod web/go.sum ./
+RUN go mod download && go mod tidy
 
-# Download dependencies
-RUN go mod download
-
-# Build the web application
+COPY web ./
 RUN CGO_ENABLED=0 GOOS=linux go build -o main .
 
 # Final stage
-FROM golang:1.21
+FROM golang:1.22.2-bullseye
 
-# Install build essentials for building Go apps at runtime
+# Install build essentials for runtime compilation
 RUN apt-get update && apt-get install -y \
     build-essential \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
-# Copy the built executable from builder stage
-COPY --from=builder /app/web/main .
+# Copy web application executable
+COPY --from=web-builder /app/web/main ./web/
+COPY web/templates ./web/templates
 
-# Copy both ww and web directories for runtime access
+# Copy ww source code for runtime compilation
 COPY ww ./ww
-COPY web ./web
+
+# Copy go.mod files for both directories
+COPY web/go.mod web/go.sum ./web/
+COPY ww/go.mod ww/go.sum ./ww/
 
 # Expose the port your web app runs on
 EXPOSE 8080
 
 # Run the web application
-CMD ["./main"]
+CMD ["./web/main"]
