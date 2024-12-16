@@ -274,7 +274,7 @@ func updateWindowBitmap(hwnd win.HWND, img *image.RGBA) {
 // TriggerBot
 func (m *Memory) RunTriggerBot() {
 	for {
-		if win.GetKeyState(win.VK_MENU)&-32768 == 0 {
+		if win.GetKeyState(win.VK_XBUTTON2)&-32768 == 0 {
 			time.Sleep(10 * time.Millisecond)
 			continue
 		}
