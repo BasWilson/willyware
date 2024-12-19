@@ -55,19 +55,19 @@ func injectDLL(processID uint32, dllPath string) error {
 
 	// Write the DLL path to the allocated memory
 	dllPathBytes := append([]byte(dllPath), 0) // Null-terminated string
-	_, _, err = procWriteProcessMemory.Call(
+	ret, _, err := procWriteProcessMemory.Call(
 		processHandle,
 		remoteMemory,
 		uintptr(unsafe.Pointer(&dllPathBytes[0])),
 		uintptr(len(dllPathBytes)),
 		0,
 	)
-	if err != nil {
+	if ret == 0 {
 		return fmt.Errorf("failed to write memory: %w", err)
 	}
 
 	// Get the address of LoadLibraryA
-	loadLibraryAddr, _, _ := procLoadLibraryA.Call()
+	loadLibraryAddr := procLoadLibraryA.Addr()
 	if loadLibraryAddr == 0 {
 		return fmt.Errorf("failed to get LoadLibraryA address")
 	}

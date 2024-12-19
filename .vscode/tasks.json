@@ -1,0 +1,44 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Build Loader Shellcode",
+            "type": "shell",
+            "command": "x86_64-w64-mingw32-gcc",
+            "args": [
+                "-O2",
+                "-fPIC",
+                "-nostdlib",
+                "-c",
+                "-m64",
+                "loader/loader.c",
+                "-o",
+                "loader/loader.o"
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": false
+            },
+            "problemMatcher": [
+                "$gcc"
+            ],
+            "detail": "Build loader.c as 64-bit shellcode"
+        },
+        {
+            "label": "Extract Shellcode",
+            "type": "shell",
+            "command": "objdump",
+            "args": [
+                "-d",
+                "loader/loader.o"
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": false
+            },
+            "problemMatcher": [],
+            "dependsOn": "Build Loader Shellcode",
+            "detail": "Extract shellcode from the 64-bit object file"
+        }
+    ]
+}
