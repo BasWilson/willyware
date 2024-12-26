@@ -181,6 +181,17 @@ func (o *Overlay) Render(entities []Entity) {
 		yPos += lineHeight
 	}
 
+	// get screen center
+	centerX := float64(screenWidth) / 2
+	centerY := float64(screenHeight) / 2
+
+	// Draw crosshair
+	dc.SetColor(color.RGBA{255, 255, 0, 255})
+	dc.SetLineWidth(1)
+	dc.DrawLine(centerX, centerY-5, centerX, centerY+5)
+	dc.DrawLine(centerX-5, centerY, centerX+5, centerY)
+	dc.Stroke()
+
 	img := dc.Image().(*image.RGBA)
 	updateWindowBitmap(o.hwnd, img)
 }
